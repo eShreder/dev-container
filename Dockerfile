@@ -15,11 +15,8 @@ ENV LC_ALL=C.UTF-8
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Essential build tools
+    # Essential build tools (includes gcc, g++, make)
     build-essential \
-    gcc \
-    g++ \
-    make \
     # Version control
     git \
     git-lfs \
@@ -101,8 +98,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create symlinks for python/pip commands (python3 -> python)
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+# Create symlinks for python/pip commands (python3 -> python, pip3 -> pip)
+RUN ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # Install uv (modern Python package installer, much faster than pip)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \

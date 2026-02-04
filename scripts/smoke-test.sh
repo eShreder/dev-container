@@ -2,7 +2,7 @@
 # Smoke test script for dev-container
 # Verifies all installed tools and their versions
 
-set -e
+# Note: Not using set -e because we want to collect all failures before exiting
 
 # Colors for output
 RED='\033[0;31m'
@@ -34,7 +34,6 @@ warn() {
 check_tool() {
     local tool=$1
     local version_cmd=$2
-    local min_version=$3
 
     if command -v "$tool" &> /dev/null; then
         version_output=$(eval "$version_cmd" 2>&1 || true)
@@ -85,6 +84,7 @@ echo "--- Python ---"
 check_tool "python3" "python3 --version"
 check_tool "python" "python --version"
 check_tool "pip3" "pip3 --version | head -1"
+check_tool "pip" "pip --version | head -1"
 check_tool "uv" "uv --version"
 echo ""
 
