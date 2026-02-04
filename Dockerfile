@@ -120,8 +120,12 @@ RUN npm install -g @openai/codex
 
 # ==============================================================================
 # Ralphex installation (autonomous AI-driven plan execution)
+# Install to /usr/local/go-bin so it's available when home is mounted from host
 # ==============================================================================
-RUN go install github.com/umputun/ralphex/cmd/ralphex@latest
+RUN GOPATH=/tmp/go go install github.com/umputun/ralphex/cmd/ralphex@latest \
+    && mkdir -p /usr/local/go-bin \
+    && mv /tmp/go/bin/ralphex /usr/local/go-bin/ \
+    && rm -rf /tmp/go
 
 # ==============================================================================
 # User configuration
@@ -134,11 +138,6 @@ RUN usermod -l developer -d /home/developer -m ubuntu 2>/dev/null || true \
     && groupmod -n developer ubuntu 2>/dev/null || true \
     && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
     && chmod 0440 /etc/sudoers.d/developer
-
-# Move Go binaries installed as root to a shared location accessible by developer
-RUN mkdir -p /usr/local/go-bin \
-    && cp -r /root/go/bin/* /usr/local/go-bin/ 2>/dev/null || true \
-    && rm -rf /root/go
 
 # Update PATH to include shared Go binaries
 ENV PATH=/usr/local/go-bin:$PATH
