@@ -94,6 +94,7 @@ echo ""
 echo "--- Node.js ---"
 check_tool "node" "node --version"
 check_tool "npm" "npm --version"
+check_tool "npx" "npx --version"
 check_tool "pnpm" "pnpm --version"
 echo ""
 
