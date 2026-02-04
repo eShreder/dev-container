@@ -1,0 +1,21 @@
+# Persistent home directory (contains credentials and configs!)
+home/
+
+# ralphex progress logs
+progress*.txt
+
+# Docker build artifacts
+*.tar
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
