@@ -61,6 +61,11 @@ RUN locale-gen en_US.UTF-8
 FROM golang:1.23-bookworm AS golang
 
 # ==============================================================================
+# Stage 3: Node.js installation
+# ==============================================================================
+FROM node:22-bookworm AS nodejs
+
+# ==============================================================================
 # Final stage (to be extended in subsequent tasks)
 # ==============================================================================
 FROM base AS final
@@ -72,6 +77,17 @@ COPY --from=golang /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/home/developer/go
 ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+
+# Copy Node.js from official image
+COPY --from=nodejs /usr/local/bin/node /usr/local/bin/node
+COPY --from=nodejs /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+# Create symlinks for npm and npx
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Set working directory
 WORKDIR /workspace
