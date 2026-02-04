@@ -118,6 +118,11 @@ RUN npm install -g @anthropic-ai/claude-code
 # Install codex (OpenAI's Codex CLI)
 RUN npm install -g @openai/codex
 
+# ==============================================================================
+# Ralphex installation (autonomous AI-driven plan execution)
+# ==============================================================================
+RUN go install github.com/umputun/ralphex/cmd/ralphex@latest
+
 # Set working directory
 WORKDIR /workspace
 
