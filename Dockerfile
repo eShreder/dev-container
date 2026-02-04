@@ -56,9 +56,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN locale-gen en_US.UTF-8
 
 # ==============================================================================
-# Final stage placeholder (to be extended in subsequent tasks)
+# Stage 2: Go installation
+# ==============================================================================
+FROM golang:1.23-bookworm AS golang
+
+# ==============================================================================
+# Final stage (to be extended in subsequent tasks)
 # ==============================================================================
 FROM base AS final
+
+# Copy Go from official image
+COPY --from=golang /usr/local/go /usr/local/go
+
+# Configure Go environment
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/home/developer/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
 # Set working directory
 WORKDIR /workspace
