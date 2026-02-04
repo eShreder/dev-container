@@ -1,6 +1,9 @@
 # Dev Container Makefile
 # Build and run AI-powered development container
 
+# Use bash for recipe commands ($RANDOM is bash-specific)
+SHELL := /bin/bash
+
 IMAGE_NAME := dev-container
 CONTAINER_NAME := dev-container
 HOME_DIR := $(CURDIR)/home
@@ -17,7 +20,7 @@ build:
 # - PROJECT -> /workspace (project to work on)
 run: init
 	docker run -it --rm \
-		--name $(CONTAINER_NAME) \
+		--name $(CONTAINER_NAME)-$$(date +%s)-$$RANDOM \
 		-v "$(HOME_DIR):/home/developer" \
 		-v "$(PROJECT):/workspace" \
 		$(IMAGE_NAME)
@@ -25,7 +28,7 @@ run: init
 # Start an interactive shell in the container
 shell: init
 	docker run -it --rm \
-		--name $(CONTAINER_NAME)-shell \
+		--name $(CONTAINER_NAME)-shell-$$(date +%s)-$$RANDOM \
 		-v "$(HOME_DIR):/home/developer" \
 		-v "$(PROJECT):/workspace" \
 		$(IMAGE_NAME) \
@@ -34,7 +37,7 @@ shell: init
 # Run smoke tests to verify all tools are installed
 test: init
 	docker run --rm \
-		--name $(CONTAINER_NAME)-test \
+		--name $(CONTAINER_NAME)-test-$$(date +%s)-$$RANDOM \
 		-v "$(HOME_DIR):/home/developer" \
 		-v "$(CURDIR):/workspace" \
 		$(IMAGE_NAME) \

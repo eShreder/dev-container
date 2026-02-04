@@ -42,9 +42,10 @@ check_tool() {
 
     # Try to execute the version command and capture both output and exit status
     # Use pipefail to ensure we get the exit code of the actual tool, not just 'head'
+    # Use bash -c instead of eval for safer command execution
     local version_output
     local exit_code
-    version_output=$(set -o pipefail; eval "$version_cmd" 2>&1)
+    version_output=$(bash -c "set -o pipefail; $version_cmd" 2>&1)
     exit_code=$?
 
     # Fail if the command exited non-zero - this indicates the tool is broken
@@ -131,6 +132,12 @@ if [ -w "/workspace" ]; then
     pass "/workspace is writable"
 else
     fail "/workspace is not writable"
+fi
+
+if [ -w "/home/developer" ]; then
+    pass "/home/developer is writable"
+else
+    fail "/home/developer is not writable (credentials won't persist)"
 fi
 echo ""
 
