@@ -89,6 +89,26 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # Install pnpm globally
 RUN npm install -g pnpm
 
+# ==============================================================================
+# Python 3.12 installation
+# Ubuntu 24.04 includes Python 3.12 by default
+# ==============================================================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create symlinks for python/pip commands (python3 -> python)
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Install uv (modern Python package installer, much faster than pip)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.local/bin/uv /usr/local/bin/uv \
+    && mv /root/.local/bin/uvx /usr/local/bin/uvx
+
 # Set working directory
 WORKDIR /workspace
 
