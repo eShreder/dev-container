@@ -123,8 +123,38 @@ RUN npm install -g @openai/codex
 # ==============================================================================
 RUN go install github.com/umputun/ralphex/cmd/ralphex@latest
 
+# ==============================================================================
+# User configuration
+# Create non-root user 'developer' with UID 1000
+# Home directory will be mounted from host at runtime
+# ==============================================================================
+# Rename existing ubuntu user/group to developer (Ubuntu 24.04 has uid/gid 1000 as 'ubuntu')
+# This preserves UID 1000 for proper volume permissions with host
+RUN usermod -l developer -d /home/developer -m ubuntu 2>/dev/null || true \
+    && groupmod -n developer ubuntu 2>/dev/null || true \
+    && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
+    && chmod 0440 /etc/sudoers.d/developer
+
+# Move Go binaries installed as root to a shared location accessible by developer
+RUN mkdir -p /usr/local/go-bin \
+    && cp -r /root/go/bin/* /usr/local/go-bin/ 2>/dev/null || true \
+    && rm -rf /root/go
+
+# Update PATH to include shared Go binaries
+ENV PATH=/usr/local/go-bin:$PATH
+
+# Create workspace directory with proper permissions
+RUN mkdir -p /workspace && chown developer:developer /workspace
+
 # Set working directory
 WORKDIR /workspace
+
+# Switch to non-root user
+USER developer
+
+# Ensure GOPATH points to user's home for any new Go installs at runtime
+ENV GOPATH=/home/developer/go
+ENV PATH=/home/developer/go/bin:$PATH
 
 # Default command
 CMD ["/bin/bash"]
