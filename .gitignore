@@ -1,6 +1,9 @@
 # Persistent home directory (contains credentials and configs!)
 home/
 
+# Claude Code local settings
+.claude/
+
 # Environment files (may contain secrets)
 .env
 .env.*

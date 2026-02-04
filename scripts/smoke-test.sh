@@ -104,6 +104,7 @@ check_tool "python" "python --version"
 check_tool "pip3" "pip3 --version | head -1"
 check_tool "pip" "pip --version | head -1"
 check_tool "uv" "uv --version"
+check_tool "uvx" "uvx --version"
 echo ""
 
 # Check AI agents
