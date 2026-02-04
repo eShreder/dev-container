@@ -30,19 +30,37 @@ warn() {
     WARNINGS=$((WARNINGS + 1))
 }
 
-# Check if a command exists and print its version
+# Check if a command exists, executes successfully, and print its version
 check_tool() {
     local tool=$1
     local version_cmd=$2
 
-    if command -v "$tool" &> /dev/null; then
-        version_output=$(eval "$version_cmd" 2>&1 || true)
-        pass "$tool: $version_output"
-        return 0
-    else
+    if ! command -v "$tool" &> /dev/null; then
         fail "$tool: not found"
         return 1
     fi
+
+    # Try to execute the version command and capture both output and exit status
+    # Use pipefail to ensure we get the exit code of the actual tool, not just 'head'
+    local version_output
+    local exit_code
+    version_output=$(set -o pipefail; eval "$version_cmd" 2>&1)
+    exit_code=$?
+
+    # Fail if the command exited non-zero - this indicates the tool is broken
+    if [ $exit_code -ne 0 ]; then
+        fail "$tool: failed with exit code $exit_code${version_output:+ ($version_output)}"
+        return 1
+    fi
+
+    # Fail if no output was produced
+    if [ -z "$version_output" ]; then
+        fail "$tool: no version output"
+        return 1
+    fi
+
+    pass "$tool: $version_output"
+    return 0
 }
 
 echo "=============================================="

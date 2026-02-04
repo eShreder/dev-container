@@ -103,12 +103,15 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # Install uv (modern Python package installer, much faster than pip)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && mv /root/.local/bin/uv /usr/local/bin/uv \
-    && mv /root/.local/bin/uvx /usr/local/bin/uvx
+# Using pip instead of curl|sh for better supply chain security
+# Note: pip installs both 'uv' and 'uvx' entry points automatically
+RUN pip install --break-system-packages uv
 
 # ==============================================================================
 # AI Agents installation
+# Note: Using floating versions intentionally - AI agents receive frequent updates
+# and this dev container prioritizes latest features over strict reproducibility.
+# For production use, consider pinning specific versions.
 # ==============================================================================
 # Install claude-code (Anthropic's Claude CLI)
 RUN npm install -g @anthropic-ai/claude-code
@@ -130,10 +133,15 @@ RUN GOPATH=/tmp/go go install github.com/umputun/ralphex/cmd/ralphex@latest \
 # Create non-root user 'developer' with UID 1000
 # Home directory will be mounted from host at runtime
 # ==============================================================================
-# Rename existing ubuntu user/group to developer (Ubuntu 24.04 has uid/gid 1000 as 'ubuntu')
-# This preserves UID 1000 for proper volume permissions with host
-RUN usermod -l developer -d /home/developer -m ubuntu 2>/dev/null || true \
-    && groupmod -n developer ubuntu 2>/dev/null || true \
+# Ubuntu 24.04 Docker image includes 'ubuntu' user with UID 1000
+# Rename it to 'developer' for clarity, or create it if it doesn't exist
+RUN if id ubuntu >/dev/null 2>&1; then \
+        usermod -l developer -d /home/developer -m ubuntu \
+        && groupmod -n developer ubuntu; \
+    else \
+        groupadd -g 1000 developer \
+        && useradd -u 1000 -g developer -m -d /home/developer -s /bin/bash developer; \
+    fi \
     && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
     && chmod 0440 /etc/sudoers.d/developer
 

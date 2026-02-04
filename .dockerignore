@@ -1,6 +1,10 @@
 # Persistent home directory (credentials!)
 home/
 
+# Environment files (may contain secrets)
+.env
+.env.*
+
 # Git
 .git/
 .gitignore

@@ -43,6 +43,7 @@ test: init
 # Initialize home directory if it doesn't exist
 init:
 	@mkdir -p "$(HOME_DIR)"
+	@mkdir -p "$(HOME_DIR)/go"
 	@echo "Home directory ready: $(HOME_DIR)"
 
 # Remove the Docker image
