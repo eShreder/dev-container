@@ -123,7 +123,7 @@ echo -e "${RED}Failed:${NC} $FAILED"
 echo -e "${YELLOW}Warnings:${NC} $WARNINGS"
 echo ""
 
-if [ $FAILED -gt 0 ]; then
+if [ "$FAILED" -gt 0 ]; then
     echo -e "${RED}Smoke test FAILED${NC}"
     exit 1
 else

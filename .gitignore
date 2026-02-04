@@ -1,6 +1,10 @@
 # Persistent home directory (contains credentials and configs!)
 home/
 
+# Environment files (may contain secrets)
+.env
+.env.*
+
 # ralphex progress logs
 progress*.txt
 
