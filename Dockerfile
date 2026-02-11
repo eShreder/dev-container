@@ -114,34 +114,35 @@ RUN pip install --break-system-packages uv
 # For production use, consider pinning specific versions.
 # ==============================================================================
 # Install claude-code (Anthropic's Claude CLI)
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code@2.1.37
 
 # Install codex (OpenAI's Codex CLI)
-RUN npm install -g @openai/codex
+RUN npm install -g @openai/codex@0.98.0
 
 # ==============================================================================
 # Ralphex installation (autonomous AI-driven plan execution)
 # Install to /usr/local/go-bin so it's available when home is mounted from host
 # ==============================================================================
-RUN GOPATH=/tmp/go go install github.com/umputun/ralphex/cmd/ralphex@latest \
-    && mkdir -p /usr/local/go-bin \
-    && mv /tmp/go/bin/ralphex /usr/local/go-bin/ \
-    && rm -rf /tmp/go
+RUN git clone --depth 1 --branch master https://github.com/umputun/ralphex.git /tmp/ralphex \
+    && cd /tmp/ralphex \
+    && GOPATH=/tmp/go go build -o /usr/local/go-bin/ralphex ./cmd/ralphex \
+    && rm -rf /tmp/ralphex /tmp/go
 
 # ==============================================================================
 # User configuration
-# Create non-root user 'developer' with UID 1000
+# Create non-root user 'developer' with configurable UID/GID
 # Home directory will be mounted from host at runtime
 # ==============================================================================
-# Ubuntu 24.04 Docker image includes 'ubuntu' user with UID 1000
-# Rename it to 'developer' for clarity, or create it if it doesn't exist
-RUN if id ubuntu >/dev/null 2>&1; then \
-        usermod -l developer -d /home/developer -m ubuntu \
-        && groupmod -n developer ubuntu; \
-    else \
-        groupadd -g 1000 developer \
-        && useradd -u 1000 -g developer -m -d /home/developer -s /bin/bash developer; \
-    fi \
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+# Remove default 'ubuntu' user if it exists (Ubuntu 24.04 creates it with UID 1000)
+# Then create 'developer' user with the requested UID/GID
+# If a group with USER_GID already exists, reuse it instead of creating a new one
+RUN if id ubuntu >/dev/null 2>&1; then userdel -r ubuntu; fi \
+    && if getent group ubuntu >/dev/null 2>&1; then groupdel ubuntu; fi \
+    && (getent group ${USER_GID} >/dev/null 2>&1 || groupadd -g ${USER_GID} developer) \
+    && useradd -u ${USER_UID} -g ${USER_GID} -m -d /home/developer -s /bin/bash developer \
     && echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/developer \
     && chmod 0440 /etc/sudoers.d/developer
 
@@ -149,7 +150,7 @@ RUN if id ubuntu >/dev/null 2>&1; then \
 ENV PATH=/usr/local/go-bin:$PATH
 
 # Create workspace directory with proper permissions
-RUN mkdir -p /workspace && chown developer:developer /workspace
+RUN mkdir -p /workspace && chown ${USER_UID}:${USER_GID} /workspace
 
 # Set working directory
 WORKDIR /workspace

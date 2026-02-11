@@ -8,12 +8,17 @@ IMAGE_NAME := dev-container
 CONTAINER_NAME := dev-container
 HOME_DIR := $(CURDIR)/home
 PROJECT ?= $(CURDIR)
+USER_UID := $(shell id -u)
+USER_GID := $(shell id -g)
 
 .PHONY: build run shell test init clean help
 
 # Build the Docker image
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker build \
+		--build-arg USER_UID=$(USER_UID) \
+		--build-arg USER_GID=$(USER_GID) \
+		-t $(IMAGE_NAME) .
 
 # Run container with mounted volumes
 # - ./home -> /home/developer (persistent home for credentials, configs)
@@ -67,6 +72,8 @@ help:
 	@echo ""
 	@echo "Variables:"
 	@echo "  PROJECT=/path/to/project  - Mount a different project as workspace"
+	@echo "  USER_UID=$(USER_UID)              - Container user UID (auto-detected)"
+	@echo "  USER_GID=$(USER_GID)              - Container user GID (auto-detected)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make build"
