@@ -109,6 +109,11 @@ check_tool "uv" "uv --version"
 check_tool "uvx" "uvx --version"
 echo ""
 
+# Check GitHub CLI
+echo "--- GitHub CLI ---"
+check_tool "gh" "gh --version | head -1"
+echo ""
+
 # Check AI agents
 echo "--- AI Agents ---"
 check_tool "claude" "claude --version 2>&1 | head -1"

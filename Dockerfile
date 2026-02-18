@@ -108,16 +108,26 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python \
 RUN pip install --break-system-packages uv
 
 # ==============================================================================
+# GitHub CLI (gh) installation
+# ==============================================================================
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# ==============================================================================
 # AI Agents installation
-# Note: Using floating versions intentionally - AI agents receive frequent updates
+# Note: Using @latest intentionally - AI agents receive frequent updates
 # and this dev container prioritizes latest features over strict reproducibility.
-# For production use, consider pinning specific versions.
 # ==============================================================================
 # Install claude-code (Anthropic's Claude CLI)
-RUN npm install -g @anthropic-ai/claude-code@2.1.37
+RUN npm install -g @anthropic-ai/claude-code@latest
 
 # Install codex (OpenAI's Codex CLI)
-RUN npm install -g @openai/codex@0.98.0
+RUN npm install -g @openai/codex@latest
 
 # ==============================================================================
 # Ralphex installation (autonomous AI-driven plan execution)
