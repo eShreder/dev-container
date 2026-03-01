@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     ca-certificates \
+    iputils-ping \
+    netcat-openbsd \
     # Archive tools
     unzip \
     zip \
@@ -41,6 +43,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Editor
     vim \
     nano \
+    # Database tools
+    sqlite3 \
+    libsqlite3-dev \
     # Misc utilities
     less \
     sudo \
@@ -61,6 +66,24 @@ FROM golang:1.23-bookworm AS golang
 # Stage 3: Node.js installation
 # ==============================================================================
 FROM node:22-bookworm AS nodejs
+
+# ==============================================================================
+# Stage: Neovim build from source (release mode, no debug info)
+# ==============================================================================
+FROM base AS neovim-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake \
+    ninja-build \
+    gettext \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+RUN git clone --depth 1 https://github.com/neovim/neovim.git /tmp/neovim \
+    && cd /tmp/neovim \
+    && make CMAKE_BUILD_TYPE=Release \
+    && cmake --install build --prefix /usr/local \
+    && rm -rf /tmp/neovim
 
 # ==============================================================================
 # Final stage (to be extended in subsequent tasks)
@@ -117,6 +140,54 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# ==============================================================================
+# Neovim (built from source in release mode)
+# ==============================================================================
+COPY --from=neovim-builder /usr/local /usr/local
+
+# stylua (Lua formatter, used by none-ls)
+RUN ARCH=$(dpkg --print-architecture) \
+    && if [ "$ARCH" = "amd64" ]; then STYLUA_ARCH="x86_64"; else STYLUA_ARCH="aarch64"; fi \
+    && STYLUA_VERSION=$(curl -fsSL https://api.github.com/repos/JohnnyMorganz/StyLua/releases/latest | jq -r '.tag_name') \
+    && curl -fsSL "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-${STYLUA_ARCH}.zip" \
+        -o /tmp/stylua.zip \
+    && unzip -o /tmp/stylua.zip -d /usr/local/bin \
+    && chmod +x /usr/local/bin/stylua \
+    && rm /tmp/stylua.zip
+
+# lua-language-server (Lua LSP, used by lspconfig: lua_ls)
+RUN ARCH=$(dpkg --print-architecture) \
+    && if [ "$ARCH" = "amd64" ]; then LUA_LS_ARCH="x64"; else LUA_LS_ARCH="arm64"; fi \
+    && LUA_LS_VERSION=$(curl -fsSL https://api.github.com/repos/LuaLS/lua-language-server/releases/latest | jq -r '.tag_name') \
+    && curl -fsSL "https://github.com/LuaLS/lua-language-server/releases/download/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-linux-${LUA_LS_ARCH}.tar.gz" \
+        -o /tmp/lua-ls.tar.gz \
+    && mkdir -p /opt/lua-language-server \
+    && tar -xzf /tmp/lua-ls.tar.gz -C /opt/lua-language-server \
+    && ln -sf /opt/lua-language-server/bin/lua-language-server /usr/local/bin/lua-language-server \
+    && rm /tmp/lua-ls.tar.gz
+
+# ==============================================================================
+# Neovim plugin dependencies (system-wide)
+# ==============================================================================
+# fzf-lua: ripgrep (live grep), fd (file finder), fzf (fuzzy finder)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ripgrep \
+    fd-find \
+    fzf \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    # Ubuntu packages fd as 'fdfind', create 'fd' symlink
+    && ln -sf /usr/bin/fdfind /usr/bin/fd
+
+# LSP servers (used by lspconfig: pyright, ts_ls, dockerls)
+# Formatters (used by none-ls: prettier)
+RUN npm install -g \
+    pyright \
+    typescript \
+    typescript-language-server \
+    dockerfile-language-server-nodejs \
+    prettier
 
 # ==============================================================================
 # AI Agents installation

@@ -125,6 +125,19 @@ echo "--- Ralphex ---"
 check_tool "ralphex" "ralphex --version 2>&1 | head -1"
 echo ""
 
+# Check Neovim and plugin dependencies
+echo "--- Neovim ---"
+check_tool "nvim" "nvim --version | head -1"
+check_tool "rg" "rg --version | head -1"
+check_tool "fd" "fd --version | head -1"
+check_tool "fzf" "fzf --version | head -1"
+check_tool "pyright" "pyright --version 2>&1 | head -1"
+check_tool "typescript-language-server" "typescript-language-server --version 2>&1"
+check_tool "lua-language-server" "lua-language-server --version 2>&1 | head -1"
+check_tool "stylua" "stylua --version"
+check_tool "prettier" "prettier --version"
+echo ""
+
 # Check user permissions
 echo "--- User Permissions ---"
 if [ "$(whoami)" = "developer" ]; then
