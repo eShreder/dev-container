@@ -190,15 +190,11 @@ RUN npm install -g \
     prettier
 
 # ==============================================================================
-# AI Agents installation
-# Note: Using @latest intentionally - AI agents receive frequent updates
-# and this dev container prioritizes latest features over strict reproducibility.
+# AI Agents (claude-code, codex) are installed at runtime via entrypoint
+# into ~/.npm-global so they persist across container rebuilds.
+# To update: run `npm install -g @anthropic-ai/claude-code@latest` inside
+# the container — the new version will be available in all future containers.
 # ==============================================================================
-# Install claude-code (Anthropic's Claude CLI)
-RUN npm install -g @anthropic-ai/claude-code@latest
-
-# Install codex (OpenAI's Codex CLI)
-RUN npm install -g @openai/codex@latest
 
 # ==============================================================================
 # Ralphex installation (autonomous AI-driven plan execution)
@@ -243,5 +239,13 @@ USER developer
 ENV GOPATH=/home/developer/go
 ENV PATH=/home/developer/go/bin:$PATH
 
-# Default command
+# Configure npm global prefix inside home (persists across container rebuilds)
+ENV NPM_CONFIG_PREFIX=/home/developer/.npm-global
+ENV PATH=/home/developer/.npm-global/bin:$PATH
+
+# Copy entrypoint script
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Default entrypoint installs AI agents if missing, then runs the command
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["/bin/bash"]
