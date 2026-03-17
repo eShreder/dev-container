@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Database tools
     sqlite3 \
     libsqlite3-dev \
+    postgresql-client \
     # Misc utilities
     less \
     sudo \
@@ -204,6 +205,13 @@ RUN git clone --depth 1 --branch master https://github.com/umputun/ralphex.git /
     && cd /tmp/ralphex \
     && GOPATH=/tmp/go go build -o /usr/local/go-bin/ralphex ./cmd/ralphex \
     && rm -rf /tmp/ralphex /tmp/go
+
+# ==============================================================================
+# Playwright (browser automation/testing)
+# Install npm package and system browser dependencies (requires root)
+# ==============================================================================
+RUN npm install -g playwright \
+    && npx playwright install --with-deps chromium
 
 # ==============================================================================
 # User configuration
