@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMAGE=dev-container
+HOME_DIR="${HOME_DIR:-$HOME/.dev-container-home}"
+CONTAINER_NAME="dev-$(echo "$PWD" | md5sum | cut -c1-12)"
+
+# Ensure persistent home exists
+mkdir -p "$HOME_DIR" "$HOME_DIR/go"
+
+if docker inspect --format='{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null | grep -q true; then
+	echo "Attaching to running container $CONTAINER_NAME..."
+	docker exec -it "$CONTAINER_NAME" bash
+else
+	echo "Starting new container $CONTAINER_NAME..."
+	docker run -it --rm \
+		--name "$CONTAINER_NAME" \
+		-v "$HOME_DIR:/home/developer" \
+		-v "$PWD:/workspace" \
+		--network host \
+		"$IMAGE"
+fi
