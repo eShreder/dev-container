@@ -3,7 +3,27 @@ set -euo pipefail
 
 IMAGE=dev-container
 HOME_DIR="${HOME_DIR:-$HOME/.dev-container-home}"
-CONTAINER_NAME="dev-$(echo "$PWD" | md5sum | cut -c1-12)"
+
+PORTS=""
+while getopts "p:" opt; do
+	case "$opt" in
+		p) PORTS="$OPTARG" ;;
+		*) echo "Usage: $0 [-p port1,port2,...]" >&2; exit 1 ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+PORT_ARGS=()
+PORT_SUFFIX=""
+if [[ -n "$PORTS" ]]; then
+	IFS=',' read -ra PORT_LIST <<< "$PORTS"
+	for port in "${PORT_LIST[@]}"; do
+		PORT_ARGS+=(-p "${port}:${port}")
+	done
+	PORT_SUFFIX="-$(echo "$PORTS" | tr ',' '-')"
+fi
+
+CONTAINER_NAME="dev-$(echo "$PWD" | md5sum | cut -c1-12)${PORT_SUFFIX}"
 
 # Ensure persistent home exists
 mkdir -p "$HOME_DIR" "$HOME_DIR/go"
@@ -17,6 +37,7 @@ else
 		--name "$CONTAINER_NAME" \
 		-v "$HOME_DIR:/home/developer" \
 		-v "$PWD:/workspace" \
+		${PORT_ARGS[@]+"${PORT_ARGS[@]}"} \
 		--network host \
 		"$IMAGE"
 fi
