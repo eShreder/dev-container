@@ -34,6 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     # Process management
     procps \
+    # Terminal multiplexer
+    tmux \
     # SSH client (for git)
     openssh-client \
     # Libraries commonly needed

@@ -38,6 +38,5 @@ else
 		-v "$HOME_DIR:/home/developer" \
 		-v "$PWD:/workspace" \
 		${PORT_ARGS[@]+"${PORT_ARGS[@]}"} \
-		--network host \
 		"$IMAGE"
 fi
