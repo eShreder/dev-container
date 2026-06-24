@@ -145,6 +145,28 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get clean
 
 # ==============================================================================
+# Google Cloud SDK (gcloud) + GKE auth plugin
+# kubectl is installed separately below (latest stable from the official k8s
+# release channel, which Google now recommends over the cloud-sdk apt package)
+# ==============================================================================
+RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+        | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+        > /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        google-cloud-cli \
+        google-cloud-cli-gke-gcloud-auth-plugin \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# kubectl (latest stable, multi-arch binary from the official k8s release channel)
+RUN ARCH=$(dpkg --print-architecture) \
+    && KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt) \
+    && curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" \
+        -o /usr/local/bin/kubectl \
+    && chmod +x /usr/local/bin/kubectl
+
+# ==============================================================================
 # Neovim (built from source in release mode)
 # ==============================================================================
 COPY --from=neovim-builder /usr/local /usr/local
