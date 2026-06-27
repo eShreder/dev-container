@@ -132,6 +132,25 @@ Notes:
   prints a warning in that case. Exit the running container first if you need to
   add a mount.
 
+### Choosing the Persistent Home (`--home`)
+
+By default `scripts/dev` stores the persistent home at `~/.dev-container-home`.
+Override it with the `--home` flag (or the `HOME_DIR` environment variable — the
+flag takes precedence):
+
+```bash
+# Use a project-specific home so credentials/configs are isolated
+scripts/dev --home ~/.dev-homes/project-a
+
+# Equals form and the environment variable both work
+scripts/dev --home=/srv/dev-homes/project-a
+HOME_DIR=/srv/dev-homes/project-a scripts/dev
+```
+
+Like `-v`, a relative or `~` home path is resolved to an absolute path. The
+home directory is mounted at `/home/developer` and persists credentials, shell
+history, and Go packages across container restarts.
+
 ## Usage Examples
 
 ### Example 1: Python Project

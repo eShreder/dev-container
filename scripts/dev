@@ -2,22 +2,41 @@
 set -euo pipefail
 
 IMAGE=dev-container
-HOME_DIR="${HOME_DIR:-$HOME/.dev-container-home}"
 
 usage() {
-	echo "Usage: $0 [-p port1,port2,...] [-v host:container ...]" >&2
+	echo "Usage: $0 [-p port1,port2,...] [-v host:container ...] [--home dir]" >&2
 }
 
 PORTS=""
 MOUNT_SPECS=()
-while getopts "p:v:" opt; do
-	case "$opt" in
-		p) PORTS="$OPTARG" ;;
-		v) MOUNT_SPECS+=("$OPTARG") ;;
-		*) usage; exit 1 ;;
+HOME_DIR_FLAG=""
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-p) [[ $# -ge 2 ]] || { echo "Error: $1 requires an argument" >&2; usage; exit 1; }
+			PORTS="$2"; shift 2 ;;
+		-p*) PORTS="${1#-p}"; shift ;;
+		-v) [[ $# -ge 2 ]] || { echo "Error: $1 requires an argument" >&2; usage; exit 1; }
+			MOUNT_SPECS+=("$2"); shift 2 ;;
+		-v*) MOUNT_SPECS+=("${1#-v}"); shift ;;
+		--home) [[ $# -ge 2 ]] || { echo "Error: $1 requires an argument" >&2; usage; exit 1; }
+			HOME_DIR_FLAG="$2"; shift 2 ;;
+		--home=*) HOME_DIR_FLAG="${1#--home=}"; shift ;;
+		-h | --help) usage; exit 0 ;;
+		--) shift; break ;;
+		-*) echo "Error: unknown option '$1'" >&2; usage; exit 1 ;;
+		*) break ;;
 	esac
 done
-shift $((OPTIND - 1))
+
+# Resolve the persistent home directory: --home flag wins over the HOME_DIR
+# environment variable, which wins over the default. A relative or ~ path is
+# resolved to absolute so docker doesn't treat it as a named volume.
+HOME_DIR="${HOME_DIR_FLAG:-${HOME_DIR:-$HOME/.dev-container-home}}"
+case "$HOME_DIR" in
+	"~")   HOME_DIR="$HOME" ;;
+	"~/"*) HOME_DIR="$HOME/${HOME_DIR#\~/}" ;;
+esac
+[[ "$HOME_DIR" = /* ]] || HOME_DIR="$(realpath -m -- "$HOME_DIR")"
 
 PORT_ARGS=()
 PORT_SUFFIX=""
