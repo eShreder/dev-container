@@ -106,6 +106,32 @@ docker run -it --rm \
   dev-container
 ```
 
+### Extra Mounts with `scripts/dev`
+
+The `scripts/dev` helper launches a per-directory container (current directory
+becomes `/workspace`). Use the repeatable `-v` flag to bind-mount additional
+directories, using the same `host:container[:opts]` format as `docker run`:
+
+```bash
+# Mount a shared library and a read-only data dir alongside /workspace
+scripts/dev -v ~/shared/lib:/workspace/lib -v ./data:/data:ro
+
+# Combine with port forwarding
+scripts/dev -p 8080 -v ~/shared/lib:/workspace/lib
+```
+
+Notes:
+
+- The host side accepts absolute paths, `~`, and relative paths (`./x`, `../x`);
+  relative and `~` paths are resolved to absolute so they don't accidentally
+  become Docker named volumes. A bare name (no slash) is passed through as a
+  named volume.
+- Extra mounts do **not** change the container name. If a container is already
+  running for the current directory, `scripts/dev` attaches to it and the `-v`
+  mounts are ignored (Docker cannot add mounts to a running container) — it
+  prints a warning in that case. Exit the running container first if you need to
+  add a mount.
+
 ## Usage Examples
 
 ### Example 1: Python Project

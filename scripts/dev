@@ -4,11 +4,17 @@ set -euo pipefail
 IMAGE=dev-container
 HOME_DIR="${HOME_DIR:-$HOME/.dev-container-home}"
 
+usage() {
+	echo "Usage: $0 [-p port1,port2,...] [-v host:container ...]" >&2
+}
+
 PORTS=""
-while getopts "p:" opt; do
+MOUNT_SPECS=()
+while getopts "p:v:" opt; do
 	case "$opt" in
 		p) PORTS="$OPTARG" ;;
-		*) echo "Usage: $0 [-p port1,port2,...]" >&2; exit 1 ;;
+		v) MOUNT_SPECS+=("$OPTARG") ;;
+		*) usage; exit 1 ;;
 	esac
 done
 shift $((OPTIND - 1))
@@ -23,6 +29,26 @@ if [[ -n "$PORTS" ]]; then
 	PORT_SUFFIX="-$(echo "$PORTS" | tr ',' '-')"
 fi
 
+# Build extra bind-mount args. Each spec is host:container[:opts] (docker -v
+# format). The host side is normalised so relative/~ paths don't silently turn
+# into named volumes, while absolute paths and bare names pass through as-is.
+MOUNT_ARGS=()
+for spec in ${MOUNT_SPECS[@]+"${MOUNT_SPECS[@]}"}; do
+	if [[ "$spec" != *:* ]]; then
+		echo "Error: -v expects host:container, got '$spec'" >&2
+		usage
+		exit 1
+	fi
+	src="${spec%%:*}"
+	rest="${spec#*:}"
+	case "$src" in
+		"~")                    src="$HOME" ;;
+		"~/"*)                  src="$HOME/${src#\~/}" ;;
+		"." | ".." | "./"* | "../"*) src="$(realpath -m "$src")" ;;
+	esac
+	MOUNT_ARGS+=(-v "${src}:${rest}")
+done
+
 CONTAINER_NAME="dev-$(echo "$PWD" | md5sum | cut -c1-12)${PORT_SUFFIX}"
 
 # Ensure persistent home exists
@@ -30,6 +56,9 @@ mkdir -p "$HOME_DIR" "$HOME_DIR/go"
 
 if docker inspect --format='{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null | grep -q true; then
 	echo "Attaching to running container $CONTAINER_NAME..."
+	if [[ ${#MOUNT_ARGS[@]} -gt 0 ]]; then
+		echo "warning: container $CONTAINER_NAME is already running; -v mounts are ignored (docker cannot add mounts to a running container)" >&2
+	fi
 	docker exec -it "$CONTAINER_NAME" bash
 else
 	echo "Starting new container $CONTAINER_NAME..."
@@ -37,6 +66,7 @@ else
 		--name "$CONTAINER_NAME" \
 		-v "$HOME_DIR:/home/developer" \
 		-v "$PWD:/workspace" \
+		${MOUNT_ARGS[@]+"${MOUNT_ARGS[@]}"} \
 		${PORT_ARGS[@]+"${PORT_ARGS[@]}"} \
 		--network services \
 		"$IMAGE"
